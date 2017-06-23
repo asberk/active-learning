@@ -4,11 +4,18 @@ import matplotlib.pyplot as plt
 
 
 def main():
-    nMax = 100
-    TMax = 10000
+    nMax = 10
+    TMax = 1000
+    lossFunctionChoice = input('Automatic (A) or User-defined (U) Loss?\n')
+    if lossFunctionChoice.lower() == 'a':
+        lossFunction = inverseLoss
+    elif lossFunctionChoice.lower() == 'u':
+        lossFunction = userDefinedLoss
+    else:
+        raise ValueError('Please enter either "A" or "U" and try again.')
     result = SimpleMultiArmedBandit(n=nMax, T=TMax, delta=.5,
                                     algOCO=OnlineGradDescStep,
-                                    actionLoss=inverseLoss,
+                                    actionLoss=lossFunction,
                                     actionLossVerbose=True)
     for j in range(TMax-1000, TMax):
         plt.plot(result[:, j], color=plt.cm.Blues((j+1000-TMax)/1001))
