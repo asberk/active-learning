@@ -104,6 +104,20 @@ def ProjSimplex(y):
     return np.maximum(0, y - tHat)
 
 
+def ProjSimplex2(y):
+    """
+    A second possible algorithm for projection onto simplex. Runs in D*log(D).
+    (Unsure if faster or slower than first alg, so should test.)
+    Paper:
+    "Projection onto the probability simplex: 
+    An efficient algorithm with a simple proof, and an application"
+    Weiran Wang, Miguel A. Carreira-Perpinan (2013)
+    Link:
+      https://arxiv.org/pdf/1309.1541.pdf
+    """
+    pass
+
+
 def userDefinedLoss(actionNumber, n, **kwargs):
     verbose = kwargs.get('verbose', False)
     if verbose:
