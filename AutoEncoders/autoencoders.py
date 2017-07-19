@@ -76,7 +76,9 @@ def simple_convolutional_autoencoder(input_shape=None,
     # Make Autoencoder
     autoencoder = create_autoencoder(encoder, decoder,
                                      name='simple_convolutional_ae')
-    autoencoder.compile(optimizer='adadelta', loss='binary_crossentropy')
+    autoencoder.compile(optimizer='adadelta',
+                        loss='binary_crossentropy',
+                        metrics=['acc', 'mse'])
     return (autoencoder, encoder, decoder)
 
 
@@ -115,7 +117,9 @@ def regularized_convolutional_autoencoder(input_shape=None,
     autoencoder = create_autoencoder(encoder,
                                      decoder,
                                      name='regz_convolutional_ae')
-    autoencoder.compile(optimizer='adadelta', loss='binary_crossentropy')
+    autoencoder.compile(optimizer='adadelta',
+                        loss='binary_crossentropy',
+                        metrics=['acc', 'mse'])
     return (autoencoder, encoder, decoder)
 
 
@@ -137,10 +141,9 @@ if __name__ == "__main__":
     (x_train, y_train), (x_test, y_test) = load_data()
     input_shape = x_train.shape[1:]
     scae, scenc, scdec = simple_convolutional_autoencoder(input_shape)
-    print("training simple convolutional autoencoder")
     scae_logname = 'simple_convolutional_ae_' + strftime() + '.log'
     scae_logger = CSVLogger(scae_logname)
-
+    print("Training simple convolutional autoencoder...")
     scae.fit(x_train, x_train, epochs=50, batch_size=128, shuffle=True,
              validation_data=(x_test, x_test), callbacks=[scae_logger])
     model_to_json(scae, 'simple_convolutional_ae.json')
@@ -150,7 +153,7 @@ if __name__ == "__main__":
     rcae, rcenc, rcdec = regularized_convolutional_autoencoder(input_shape)
     rcae_logname = 'regularized_convolutional_ae_' + strftime() + '.log'
     rcae_logger = CSVLogger(rcae_logname)
-    print('Training regularized convolutional autoencoder')
+    print('Training regularized convolutional autoencoder...')
     rcae.fit(x_train, x_train, epochs=150, batch_size=128, shuffle=True,
              validation_data=(x_test, x_test), callbacks=[rcae_logger])
     model_to_json(rcae, 'regularized_convolutional_ae.json')
