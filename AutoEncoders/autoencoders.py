@@ -1,8 +1,10 @@
+from datetime import datetime
 from keras import backend as K
 
 from keras.layers import Input, Conv2D, Dense, Dropout, Flatten
 from keras.layers import MaxPooling2D, Reshape, UpSampling2D
 from keras import regularizers
+from keras.callbacks import CSVLogger
 
 from keras.models import Model
 
@@ -63,12 +65,14 @@ def simple_convolutional_autoencoder(input_shape=None,
     # Make Encoder
     if input_shape is None:
         input_shape = (28, 28, 1)
-    encoder = create_basic_encoder(input_shape)
+    encoder = create_basic_encoder(input_shape,
+                                   name='simple_convolutional_enc')
     # Make Decoder
     if encoding_shape is None:
         encoded_shape = encoder.output_shape[1:]
         # encoded_shape = (4, 4, 8)
-    decoder = create_basic_decoder(encoded_shape)
+    decoder = create_basic_decoder(encoded_shape,
+                                   name='simple_convolutional_dec')
     # Make Autoencoder
     autoencoder = create_autoencoder(encoder, decoder,
                                      name='simple_convolutional_ae')
@@ -93,7 +97,8 @@ def regularized_convolutional_autoencoder(input_shape=None,
     x = Dense(encoded_size, activation='sigmoid',
               activity_regularizer=regularizer)(x)
     encoded = Dropout(.5)(x)
-    encoder = Model(e.inputs, encoded)
+    encoder = Model(e.inputs, encoded,
+                    name='regularized_convolutional_enc')
     # Make Decoder
     d_input_shape = d.input_shape[1:]
     d_input_size = np.prod(d_input_shape)
@@ -104,7 +109,8 @@ def regularized_convolutional_autoencoder(input_shape=None,
     y = Dropout(.5)(y)
     y = Reshape(d_input_shape)(y)
     decoder_top = Model(input_enc, y)
-    decoder = Model(decoder_top.inputs, d(decoder_top.outputs))
+    decoder = Model(decoder_top.inputs, d(decoder_top.outputs),
+                    name='regularized_convolutional_dec')
     # Make Autoencoder
     autoencoder = create_autoencoder(encoder,
                                      decoder,
@@ -113,22 +119,40 @@ def regularized_convolutional_autoencoder(input_shape=None,
     return (autoencoder, encoder, decoder)
 
 
+def model_to_json(model, filepath):
+    info = 'Writing {} to json file...'.format(model.name)
+    print(info, end='')
+    model_json = model.to_json()
+    with open(filepath, 'w') as fp:
+        fp.write(model_json)
+    print('done!')
+    return
+
+
+def strftime():
+    return datetime.now().strftime('%Y%m%d-%H%M%S')
+
+
 if __name__ == "__main__":
     (x_train, y_train), (x_test, y_test) = load_data()
     input_shape = x_train.shape[1:]
     scae, scenc, scdec = simple_convolutional_autoencoder(input_shape)
     print("training simple convolutional autoencoder")
+    scae_logname = 'simple_convolutional_ae_' + strftime() + '.log'
+    scae_logger = CSVLogger(scae_logname)
+
     scae.fit(x_train, x_train, epochs=50, batch_size=128, shuffle=True,
-             validation_data=(x_test, x_test))
-    print('Writing to json')
-    scae_json = scae.to_json()
-    with open('scae_json.json', 'w') as fp:
-        fp.write(scae_json)
-    print('Training regularized convolutional autoencoder')
+             validation_data=(x_test, x_test), callbacks=[scae_logger])
+    model_to_json(scae, 'simple_convolutional_ae.json')
+    model_to_json(scenc, 'simple_convolutional_enc.json')
+    model_to_json(scdec, 'simple_convolutional_dec.json')
+
     rcae, rcenc, rcdec = regularized_convolutional_autoencoder(input_shape)
+    rcae_logname = 'regularized_convolutional_ae_' + strftime() + '.log'
+    rcae_logger = CSVLogger(rcae_logname)
+    print('Training regularized convolutional autoencoder')
     rcae.fit(x_train, x_train, epochs=150, batch_size=128, shuffle=True,
-             validation_data=(x_test, x_test))
-    print('Writing to json')
-    rcae_json = rcae.to_json()
-    with open('rcae_json.json', 'w') as fp:
-        fp.write(rcae_json)
+             validation_data=(x_test, x_test), callbacks=[rcae_logger])
+    model_to_json(rcae, 'regularized_convolutional_ae.json')
+    model_to_json(rcenc, 'regularized_convolutional_enc.json')
+    model_to_json(rcdec, 'regularized_convolutional_dec.json')
