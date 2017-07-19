@@ -73,7 +73,7 @@ def simple_convolutional_autoencoder(input_shape=None,
     autoencoder = create_autoencoder(encoder, decoder,
                                      name='simple_convolutional_ae')
     autoencoder.compile(optimizer='adadelta', loss='binary_crossentropy')
-    return autoencoder
+    return (autoencoder, encoder, decoder)
 
 
 def regularized_convolutional_autoencoder(input_shape=None,
