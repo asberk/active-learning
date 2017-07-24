@@ -137,6 +137,70 @@ def strftime():
     return datetime.now().strftime('%Y%m%d-%H%M%S')
 
 
+def plot_encoded(img, lab=None, n=None, **kwargs):
+    if n is None:
+        n = np.minimum(img.shape[0], 128)
+    max_img_width = kwargs.get('max_img_width', 2)
+    max_img_height = kwargs.get('max_img_height', 2)
+    max_img_cols = kwargs.get('max_img_cols', 4)
+    max_figure_width = kwargs.get('max_figure_width', 16)
+    max_figure_height = kwargs.get('max_figure_height', 500)
+    sorted_labels_bool = kwargs.get('sorted_labels', False)
+    include_cmap = kwargs.get('include_cmap', True)
+    cbar_adjust = kwargs.get('colorbar_adjust', .8)
+    cbar_left = kwargs.get('colorbar_left', .85)
+    cbar_bottom = kwargs.get('colorbar_bottom', .15)
+    cbar_width = kwargs.get('colorbar_width', .05)
+    cbar_height = kwargs.get('colorbar_height', .7)
+    cbar_rect = kwargs.get('colorbar_rect', [cbar_left,
+                                             cbar_bottom,
+                                             cbar_width,
+                                             cbar_height])
+    return_fig = kwargs.get('return_fig', False)
+
+    num_img_rows = np.ceil(n / max_img_cols).astype(int)
+    num_img_cols = np.minimum(n, max_img_cols).astype(int)
+    figure_height = np.minimum(max_img_height * num_img_rows,
+                               max_figure_height).astype(int)
+    figure_width = np.minimum(num_img_cols * max_img_width,
+                              max_figure_width).astype(int)
+
+    img = img[:n, ...]
+    img = img.reshape((n, -1, img.shape[-1]))
+    if lab is not None:
+        lab = lab[:n]
+    if sorted_labels_bool:
+        print('sorting inputs...')
+        label_sort_order = np.argsort(lab)
+        lab = lab[label_sort_order]
+        img = img[label_sort_order, ...]
+
+    vmin = img.min()
+    vmax = img.max()
+    fig, axes = plt.subplots(nrows=num_img_rows, ncols=num_img_cols,
+                             figsize=(figure_width, figure_height))
+    j = 0
+    while j < n:
+        ax = axes.flat[j]
+        cax = ax.imshow(img[j], vmin=vmin, vmax=vmax)
+        if lab is not None:
+            ax.set_title('label: {}'.format(lab[j]))
+        ax.get_xaxis().set_visible(False)
+        ax.get_yaxis().set_visible(False)
+        j += 1
+    while j < num_img_rows * num_img_cols:
+        fig.delaxes(axes.flatten()[j])
+        j += 1
+    if include_cmap:
+        fig.subplots_adjust(right=cbar_adjust)
+        cbar_ax = fig.add_axes(cbar_rect)
+        fig.colorbar(cax, cax=cbar_ax)
+    if return_fig:
+        return fig
+    else:
+        return
+
+
 if __name__ == "__main__":
     (x_train, y_train), (x_test, y_test) = load_data()
     input_shape = x_train.shape[1:]
